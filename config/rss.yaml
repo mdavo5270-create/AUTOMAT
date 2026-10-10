@@ -1,0 +1,11 @@
+# Exemple de configuration RSS
+# Tu peux en avoir plusieurs et les appeler avec --feed
+
+feeds:
+  - name: "GitHub Status"
+    url: "https://www.githubstatus.com/history.rss"
+    max_posts: 2
+
+  # - name: "Mon blog"
+  #   url: "https://monblog.com/rss"
+  #   max_posts: 3

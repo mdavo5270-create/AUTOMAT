@@ -1,0 +1,6 @@
+atproto>=0.0.55
+python-dotenv>=1.0.0
+feedparser>=6.0.11
+PyYAML>=6.0.1
+requests>=2.31.0
+rich>=13.7.0

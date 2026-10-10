@@ -1,0 +1,15 @@
+# Configuration du module d'engagement
+keywords:
+  - python
+  - automatisation
+  - bluesky
+  - open source
+  - ia
+  - bot
+
+actions:
+  like: true
+  repost: false
+
+max_per_run: 12
+search_limit: 25
