@@ -1,72 +1,44 @@
+"""Réponses automatiques aux mentions
+Usage: python -m automat.replies
 """
-Module de réponses automatiques aux mentions
-
-Usage:
-  python -m automat.replies
-"""
-
+import random
+from atproto import models
 from automat.client import get_client
-from rich.console import Console
 
-console = Console()
-
-# Réponses possibles (tu peux les personnaliser)
-DEFAULT_REPLIES = [
-    "Merci pour le message ! 🦋",
+REPLIES = [
+    "Merci pour le message ! 🐛",
     "Hello ! Merci de m'avoir mentionné 😊",
     "Salut ! Content de te lire.",
 ]
 
-
 def reply_to_mentions(max_replies: int = 5):
     client = get_client()
-
-    # Récupère les notifications non lues
     notifs = client.app.bsky.notification.list_notifications()
-
     replied = 0
+    my_did = client.me.did
+
     for notif in notifs.notifications:
         if replied >= max_replies:
             break
-
         if notif.reason != "mention":
             continue
-
-        # On évite de répondre à soi-même
-        if notif.author.handle == client.me.handle:
+        if notif.author.did == my_did:
             continue
-
         try:
-            # Réponse simple
-            import random
-            text = random.choice(DEFAULT_REPLIES)
-
-            # On construit la réponse en thread
-            parent = {
-                "uri": notif.uri,
-                "cid": notif.cid
-            }
-            root = parent  # simplifié
-
+            text = random.choice(REPLIES)
+            parent = models.ComAtprotoRepoStrongRef.Main(uri=notif.uri, cid=notif.cid)
             client.send_post(
                 text=text,
-                reply_to={
-                    "root": root,
-                    "parent": parent
-                }
+                reply_to=models.AppBskyFeedPost.ReplyRef(parent=parent, root=parent),
             )
-            console.print(f"[green]✅ Répondu à @{notif.author.handle}[/green]")
+            print(f"Répondu à @{notif.author.handle}")
             replied += 1
-
         except Exception as e:
-            console.print(f"[yellow]Impossible de répondre à {notif.author.handle} : {e}[/yellow]")
-
-    console.print(f"[cyan]Terminé. {replied} réponse(s) envoyée(s).[/cyan]")
-
+            print(f"Impossible de répondre à @{notif.author.handle}: {e}")
+    print(f"Terminé. {replied} réponse(s).")
 
 def main():
     reply_to_mentions()
-
 
 if __name__ == "__main__":
     main()

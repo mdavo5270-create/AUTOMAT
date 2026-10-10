@@ -1,9 +1,8 @@
-name: Engagement automatique
+name: Engagement 24/7
 
 on:
   schedule:
-    # 3 fois par jour
-    - cron: "0 9,14,19 * * *"
+    - cron: "0 8,12,16,20 * * *"   # 4 fois par jour
   workflow_dispatch:
 
 jobs:
@@ -11,17 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Lancer l'engagement
+      - run: pip install -r requirements.txt
+      - name: Engagement (likes)
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
+          KEYWORDS: ${{ secrets.KEYWORDS }}
+          MAX_ENGAGE_PER_RUN: "8"
         run: python -m automat.engage

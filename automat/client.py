@@ -1,31 +1,18 @@
-"""
-Client Bluesky unifié pour AUTOMAT
-Utilise le SDK officiel atproto (Python)
-"""
-
+"""Client Bluesky unifié pour AUTOMAT"""
 import os
 from dotenv import load_dotenv
 from atproto import Client
-from rich.console import Console
 
 load_dotenv()
-console = Console()
-
 
 def get_client() -> Client:
-    """Crée et authentifie un client Bluesky."""
-    handle = os.getenv("BLUESKY_HANDLE")
-    password = os.getenv("BLUESKY_APP_PASSWORD")
+    handle = os.getenv("BLUESKY_HANDLE") or os.getenv("BSKY_HANDLE") or os.getenv("BLUESKY_USERNAME")
+    password = os.getenv("BLUESKY_APP_PASSWORD") or os.getenv("BSKY_PASSWORD") or os.getenv("BLUESKY_PASSWORD")
 
     if not handle or not password:
-        console.print("[red]❌ BLUESKY_HANDLE et BLUESKY_APP_PASSWORD doivent être définis dans .env[/red]")
-        raise SystemExit(1)
+        raise SystemExit("ERREUR: Définis BLUESKY_HANDLE et BLUESKY_APP_PASSWORD (secrets GitHub ou .env)")
 
     client = Client()
-    try:
-        client.login(handle, password)
-        console.print(f"[green]✅ Connecté en tant que {handle}[/green]")
-        return client
-    except Exception as e:
-        console.print(f"[red]❌ Erreur de connexion : {e}[/red]")
-        raise SystemExit(1)
+    client.login(handle, password)
+    print(f"Connecté en tant que {handle}")
+    return client

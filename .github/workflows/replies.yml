@@ -1,9 +1,8 @@
-name: Réponses automatiques aux mentions
+name: Réponses mentions 24/7
 
 on:
   schedule:
-    # Toutes les heures
-    - cron: "0 * * * *"
+    - cron: "0 * * * *"   # toutes les heures
   workflow_dispatch:
 
 jobs:
@@ -11,15 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
+      - run: pip install -r requirements.txt
       - name: Répondre aux mentions
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}

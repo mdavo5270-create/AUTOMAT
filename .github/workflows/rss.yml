@@ -1,27 +1,24 @@
-name: RSS → Bluesky
+name: RSS 24/7
 
 on:
   schedule:
-    # Toutes les 2 heures
-    - cron: "0 */2 * * *"
-  workflow_dispatch:  # permet de lancer manuellement
+    - cron: "0 */2 * * *"   # toutes les 2 heures
+  workflow_dispatch:
 
 jobs:
   post-rss:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Poster le flux RSS
+      - run: pip install -r requirements.txt
+      - name: Poster RSS
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-        run: python -m automat.rss --max 2
+          RSS_FEED: ${{ secrets.RSS_FEED }}
+        run: |
+          FEED="${RSS_FEED:-https://www.githubstatus.com/history.rss}"
+          python -m automat.rss --feed "$FEED" --max 2

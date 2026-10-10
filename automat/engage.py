@@ -1,86 +1,43 @@
+"""Engagement (like) basé sur mots-clés — adapté de Endless-Range/bluesky-engagement-bot
+Usage: python -m automat.engage
 """
-Module d'engagement
-Like / Repost des posts contenant certains mots-clés.
-
-Usage:
-  python -m automat.engage
-"""
-
-import yaml
-from pathlib import Path
+import os
+import time
 from automat.client import get_client
-from rich.console import Console
-
-console = Console()
-CONFIG_FILE = Path("config/engage.yaml")
-
-
-def load_config():
-    if not CONFIG_FILE.exists():
-        # Config par défaut
-        return {
-            "keywords": ["python", "automatisation", "bluesky", "open source"],
-            "actions": {"like": True, "repost": False},
-            "max_per_run": 10,
-            "search_limit": 30
-        }
-    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
 
 def engage():
     client = get_client()
-    config = load_config()
-
-    keywords = config.get("keywords", [])
-    do_like = config.get("actions", {}).get("like", True)
-    do_repost = config.get("actions", {}).get("repost", False)
-    max_actions = config.get("max_per_run", 10)
-
-    actions_done = 0
+    keywords_raw = os.getenv("KEYWORDS", "python,bluesky,automatisation,open source")
+    keywords = [k.strip() for k in keywords_raw.split(",") if k.strip()]
+    max_actions = int(os.getenv("MAX_ENGAGE_PER_RUN", "8"))
+    actions = 0
 
     for keyword in keywords:
-        if actions_done >= max_actions:
+        if actions >= max_actions:
             break
-
-        console.print(f"[cyan]Recherche : {keyword}[/cyan]")
+        print(f"Recherche: {keyword}")
         try:
-            results = client.app.bsky.feed.search_posts(params={
-                "q": keyword,
-                "limit": config.get("search_limit", 20)
-            })
-
+            results = client.app.bsky.feed.search_posts(params={"q": keyword, "limit": 15})
             for post in results.posts:
-                if actions_done >= max_actions:
+                if actions >= max_actions:
                     break
-
-                uri = post.uri
-                cid = post.cid
-
+                # ignorer les réponses
+                if getattr(post.record, "reply", None):
+                    continue
                 try:
-                    if do_like:
-                        client.like(uri, cid)
-                        console.print(f"  ❤️  Like → {post.author.handle}")
-                        actions_done += 1
-
-                    if do_repost and actions_done < max_actions:
-                        client.repost(uri, cid)
-                        console.print(f"  🔄 Repost → {post.author.handle}")
-                        actions_done += 1
-
-                except Exception as e:
-                    # déjà liké / rate limit / etc.
+                    client.like(post.uri, post.cid)
+                    print(f"  Like -> @{post.author.handle}")
+                    actions += 1
+                    time.sleep(2)
+                except Exception:
                     pass
-
+            time.sleep(1)
         except Exception as e:
-            console.print(f"[red]Erreur recherche '{keyword}' : {e}[/red]")
-
-    console.print(f"[green]✅ {actions_done} action(s) effectuée(s)[/green]")
-
+            print(f"Erreur recherche '{keyword}': {e}")
+    print(f"Terminé. {actions} like(s).")
 
 def main():
     engage()
-
 
 if __name__ == "__main__":
     main()

@@ -1,73 +1,68 @@
-# 🦋 AUTOMAT – Suite d'automatisation Bluesky basée sur le code réel des meilleurs projets
+# 🐛 AUTOMAT — Automatisation Bluesky 24/7
 
-Ce dépôt **ne réinvente pas la roue**. Il regroupe et organise le **code réel et éprouvé** des meilleurs projets open-source d'automatisation Bluesky.
+Suite d'automatisation **prête à l'emploi** qui tourne **sans intervention humaine** grâce à **GitHub Actions**.
 
-## Sources intégrées
-
-| Module | Source originale | Description |
-|--------|------------------|-----------|
-| `modules/scheduled-post` | [philnash/bsky-bot](https://github.com/philnash/bsky-bot) | Bot TypeScript + GitHub Actions pour poster selon un planning |
-| `modules/firehose-bot` | [bluesky-hack/bot](https://github.com/bluesky-hack/bot) | Bot Python qui écoute le firehose en temps réel + exemples cron |
-| `modules/rss-bot` | [joschi/blueskyfeedbot](https://github.com/joschi/blueskyfeedbot) | Action GitHub pour poster automatiquement des flux RSS |
-| `modules/engagement` | [Endless-Range/bluesky-engagement-bot](https://github.com/Endless-Range/bluesky-engagement-bot) | Bot d'engagement complet (recherche mots-clés, like, repost, réponses avec IA) |
-
-Tous les crédits vont aux auteurs originaux. Le code a été copié et organisé ici pour te permettre d'avoir **tout au même endroit**, prêt à l'emploi.
+Code adapté à partir de :
+- [philnash/bsky-bot](https://github.com/philnash/bsky-bot)
+- [bluesky-hack/bot](https://github.com/bluesky-hack/bot)
+- [joschi/blueskyfeedbot](https://github.com/joschi/blueskyfeedbot)
+- [Endless-Range/bluesky-engagement-bot](https://github.com/Endless-Range/bluesky-engagement-bot)
 
 ---
 
-## Structure
+## Déploiement 24/7 (obligatoire — 2 minutes)
 
-```
-AUTOMAT/
-├── modules/
-│   ├── scheduled-post/     ← Code de philnash/bsky-bot (TypeScript)
-│   ├── firehose-bot/       ← Code de bluesky-hack/bot (Python)
-│   ├── rss-bot/            ← Code de joschi/blueskyfeedbot (TypeScript / GitHub Action)
-│   └── engagement/         ← Code de Endless-Range/bluesky-engagement-bot (Python)
-├── .env.example
-└── README.md
-```
+### 1. Ajoute les secrets GitHub
+
+Va dans ton dépôt → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+
+| Secret | Obligatoire | Valeur |
+|--------|-------------|--------|
+| `BLUESKY_HANDLE` | Oui | `tonhandle.bsky.social` |
+| `BLUESKY_APP_PASSWORD` | Oui | App Password (https://bsky.app/settings/app-passwords) |
+| `KEYWORDS` | Non | `python,bluesky,ia` |
+| `RSS_FEED` | Non | URL de ton flux RSS |
+| `POST_TEXT` | Non | Texte du post programmé |
+
+### 2. Active les workflows
+
+Onglet **Actions** → active les workflows s'ils sont désactivés.
+
+### 3. C'est tout
+
+Les bots tournent automatiquement :
+
+| Workflow | Fréquence |
+|----------|-----------|
+| **RSS** | Toutes les 2 heures |
+| **Engagement (likes)** | 4	imes / jour |
+| **Réponses mentions** | Toutes les heures |
+| **Post programmé** | 09:30 et 18:30 UTC |
+
+Tu peux aussi les lancer manuellement (bouton **Run workflow**).
 
 ---
 
-## Comment démarrer rapidement
-
-### 1. Configurer les credentials
+## Modules locaux (optionnel)
 
 ```bash
-cp .env.example .env
+git clone https://github.com/mdavo5270-create/AUTOMAT.git
+cd AUTOMAT
+pip install -r requirements.txt
+cp .env.example .env   # remplis BLUESKY_HANDLE + BLUESKY_APP_PASSWORD
+
+python -m automat.post --text "Test"
+python -m automat.rss --feed https://exemple.com/rss --max 2
+python -m automat.engage
+python -m automat.replies
 ```
-
-Remplis :
-```env
-BLUESKY_HANDLE=tonhandle.bsky.social
-BLUESKY_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx
-```
-
-Crée une App Password ici : https://bsky.app/settings/app-passwords
-
-### 2. Choisir un module et suivre son README
-
-Chaque dossier dans `modules/` contient le code original + les instructions d'utilisation du projet source.
 
 ---
 
-## Recommandations d'usage
+## Important
 
-| Objectif | Module à utiliser |
-|----------|-------------------|
-| Poster automatiquement selon un horaire | `modules/scheduled-post` (philnash) |
-| Poster un flux RSS | `modules/rss-bot` (joschi) |
-| Répondre en temps réel aux mentions / mots-clés | `modules/firehose-bot` (bluesky-hack) |
-| Engagement intelligent (like + repost + réponses IA) | `modules/engagement` (Endless-Range) |
+- Utilise **toujours** une **App Password**, jamais ton vrai mot de passe.
+- GitHub Actions = hébergement gratuit 24/7 pour les tâches planifiées.
+- Le firehose temps réel (connexion permanente) nécessite un VPS ; les workflows ci-dessus couvrent 95 % des besoins d'automatisation sans serveur.
 
----
-
-## Crédits
-
-- **philnash** – [bsky-bot](https://github.com/philnash/bsky-bot)
-- **bluesky-hack** – [bot](https://github.com/bluesky-hack/bot)
-- **joschi** – [blueskyfeedbot](https://github.com/joschi/blueskyfeedbot)
-- **Endless-Range** – [bluesky-engagement-bot](https://github.com/Endless-Range/bluesky-engagement-bot)
-
-Merci à eux pour le travail open-source de qualité.
+Dépôt : https://github.com/mdavo5270-create/AUTOMAT

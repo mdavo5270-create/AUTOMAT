@@ -1,79 +1,58 @@
+"""Publier un flux RSS sur Bluesky (code adapté de joschi/blueskyfeedbot + feedparser)
+Usage: python -m automat.rss --feed URL --max 2
 """
-Module RSS → Bluesky
-Publie automatiquement les nouveaux articles d'un flux RSS.
-
-Usage:
-  python -m automat.rss
-  python -m automat.rss --feed https://exemple.com/rss
-"""
-
 import argparse
 import json
-import feedparser
 from pathlib import Path
+import feedparser
 from automat.client import get_client
-from rich.console import Console
 
-console = Console()
 CACHE_FILE = Path("data/posted_rss.json")
-
 
 def load_cache() -> set:
     if CACHE_FILE.exists():
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            return set(json.load(f))
+        return set(json.loads(CACHE_FILE.read_text(encoding="utf-8")))
     return set()
-
 
 def save_cache(cache: set):
     CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(list(cache), f, indent=2)
+    CACHE_FILE.write_text(json.dumps(list(cache), indent=2), encoding="utf-8")
 
-
-def post_from_rss(feed_url: str, max_posts: int = 3):
+def post_from_rss(feed_url: str, max_posts: int = 2):
     client = get_client()
     feed = feedparser.parse(feed_url)
-
     if not feed.entries:
-        console.print("[yellow]Aucun article trouvé dans le flux.[/yellow]")
+        print("Aucun article dans le flux.")
         return
 
     cache = load_cache()
     posted = 0
-
-    for entry in feed.entries[:10]:  # on regarde les 10 plus récents
+    for entry in feed.entries[:15]:
         link = entry.get("link") or entry.get("id")
         if not link or link in cache:
             continue
-
-        title = entry.get("title", "Sans titre").strip()
+        title = (entry.get("title") or "Sans titre").strip()
         text = f"{title}\n\n{link}"
-
+        if len(text) > 300:
+            text = text[:297] + "..."
         try:
             client.send_post(text=text)
             cache.add(link)
             posted += 1
-            console.print(f"[green]✅ Publié : {title[:60]}...[/green]")
-
+            print(f"Publié: {title[:70]}")
             if posted >= max_posts:
                 break
         except Exception as e:
-            console.print(f"[red]Erreur sur {title[:40]} : {e}[/red]")
-
+            print(f"Erreur: {e}")
     save_cache(cache)
-    console.print(f"[cyan]Terminé. {posted} nouveau(x) post(s).[/cyan]")
-
+    print(f"Terminé. {posted} post(s).")
 
 def main():
-    parser = argparse.ArgumentParser(description="Poster un flux RSS sur Bluesky")
-    parser.add_argument("--feed", default="https://www.githubstatus.com/history.rss",
-                        help="URL du flux RSS")
-    parser.add_argument("--max", type=int, default=2, help="Nombre max de posts par exécution")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--feed", default="https://www.githubstatus.com/history.rss")
+    parser.add_argument("--max", type=int, default=2)
     args = parser.parse_args()
-
     post_from_rss(args.feed, args.max)
-
 
 if __name__ == "__main__":
     main()
