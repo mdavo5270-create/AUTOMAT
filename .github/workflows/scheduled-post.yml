@@ -1,24 +1,10 @@
-name: Post programmé 24/7
+name: Post programmé (désactivé — OPTIMAT seul)
 
 on:
-  schedule:
-    - cron: "30 9,18 * * *"   # 09:30 et 18:30 UTC
   workflow_dispatch:
 
 jobs:
-  post:
+  skip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - name: Poster
-        env:
-          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
-          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-          POST_TEXT: ${{ secrets.POST_TEXT }}
-        run: |
-          TEXT="${POST_TEXT:-Bonjour Bluesky 🐛 — post automatique AUTOMAT}"
-          python -m automat.post --text "$TEXT"
+      - run: echo "Post unitaire désactivé — OPTIMAT gère 2-3 posts/jour max"

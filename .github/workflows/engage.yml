@@ -1,23 +1,10 @@
-name: Engagement 24/7
+name: Engagement (désactivé — OPTIMAT seul)
 
 on:
-  schedule:
-    - cron: "0 8,12,16,20 * * *"   # 4 fois par jour
   workflow_dispatch:
 
 jobs:
-  engage:
+  skip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - name: Engagement (likes)
-        env:
-          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
-          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-          KEYWORDS: ${{ secrets.KEYWORDS }}
-          MAX_ENGAGE_PER_RUN: "8"
-        run: python -m automat.engage
+      - run: echo "Engage unitaire désactivé — OPTIMAT gère"

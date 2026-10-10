@@ -1,15 +1,16 @@
-name: OPTIMAT 24/7 (autopilote)
+name: OPTIMAT 24/7 (cadence humaine)
 
 on:
   schedule:
-    - cron: "15 * * * *"
+    # Toutes les heures : souvent SILENCE, posts seulement à 8/13/19 UTC
+    - cron: "20 * * * *"
   workflow_dispatch:
     inputs:
       mode:
         description: "auto | content | engage | growth | news | full"
         default: "auto"
       only:
-        description: "jobs forcés"
+        description: "forcer un job (rare)"
         default: ""
       niche:
         description: "auto | bluesky | crypto | world"
@@ -24,28 +25,26 @@ jobs:
         with:
           python-version: "3.11"
       - run: pip install -r requirements.txt
-      - name: Autopilote
+      - name: Run
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
           KEYWORDS: ${{ secrets.KEYWORDS }}
           GROWTH_KEYWORDS: ${{ secrets.GROWTH_KEYWORDS }}
-          RSS_FEED: ${{ secrets.RSS_FEED }}
           NEWS_FEEDS: ${{ secrets.NEWS_FEEDS }}
           POST_TEXT: ${{ secrets.POST_TEXT }}
           BRAND_SUFFIX: ${{ secrets.BRAND_SUFFIX }}
           FORCE_NICHE: ${{ github.event.inputs.niche || '' }}
           OPTIMAT_MODE: ${{ github.event.inputs.mode || 'auto' }}
           OPTIMAT_ONLY: ${{ github.event.inputs.only || '' }}
-          MAX_ENGAGE_PER_RUN: "6"
-          MAX_REPLIES: "5"
-          MAX_FOLLOWS_PER_RUN: "8"
-          MAX_FOLLOWS_PER_DAY: "35"
+          MAX_ENGAGE_PER_RUN: "4"
+          MAX_REPLIES: "3"
+          MAX_FOLLOWS_PER_RUN: "5"
+          MAX_FOLLOWS_PER_DAY: "25"
           ENABLE_UNFOLLOW: "1"
           UNFOLLOW_AFTER_DAYS: "10"
-          MAX_UNFOLLOWS_PER_RUN: "5"
+          MAX_UNFOLLOWS_PER_RUN: "3"
           NEWS_MAX: "1"
-          RSS_MAX: "1"
         run: |
           if [ -z "$KEYWORDS" ] && [ -f optomat/keywords.default ]; then
             export KEYWORDS=$(cat optomat/keywords.default)

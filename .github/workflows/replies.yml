@@ -1,21 +1,10 @@
-name: Réponses mentions 24/7
+name: Réponses (désactivé — OPTIMAT seul)
 
 on:
-  schedule:
-    - cron: "0 * * * *"   # toutes les heures
   workflow_dispatch:
 
 jobs:
-  replies:
+  skip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - name: Répondre aux mentions
-        env:
-          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
-          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-        run: python -m automat.replies
+      - run: echo "Replies unitaire désactivé — OPTIMAT gère"

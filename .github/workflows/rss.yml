@@ -1,24 +1,11 @@
-name: RSS 24/7
+name: RSS (désactivé — géré par OPTIMAT seul)
 
+# Désactivé pour éviter le double-post avec OPTIMAT
 on:
-  schedule:
-    - cron: "0 */2 * * *"   # toutes les 2 heures
   workflow_dispatch:
 
 jobs:
-  post-rss:
+  skip:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - run: pip install -r requirements.txt
-      - name: Poster RSS
-        env:
-          BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
-          BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-          RSS_FEED: ${{ secrets.RSS_FEED }}
-        run: |
-          FEED="${RSS_FEED:-https://www.githubstatus.com/history.rss}"
-          python -m automat.rss --feed "$FEED" --max 2
+      - run: echo "RSS unitaire désactivé — utilise OPTIMAT (1 actu/jour max)"

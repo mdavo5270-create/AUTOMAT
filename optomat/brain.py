@@ -1,4 +1,4 @@
-"""OPTIMAT Brain — décisions multi-jobs + niches."""
+"""OPTIMAT Brain — cadence HUMAINE : peu de posts, bien espacés."""
 from __future__ import annotations
 
 import os
@@ -69,51 +69,74 @@ def _weekday() -> int:
 
 
 def decide_jobs() -> list[str]:
+    """
+    Règle d'or : JAMAIS post_smart + news + rss dans le même run.
+    Max 2–4 posts publics / jour au total (heures fixes).
+    Le reste du temps = silence, likes légers, replies si besoin.
+    """
     h = _hour_utc()
     mode = os.getenv("OPTIMAT_MODE", "auto")
+
     if mode == "content":
         return ["post_smart"]
     if mode == "engage":
         return ["engage", "replies"]
     if mode == "growth":
-        return ["growth", "engage"]
+        return ["growth"]
     if mode == "news":
         return ["news"]
     if mode == "full":
-        return ["post_smart", "news", "engage", "replies", "growth", "stats"]
+        # full ne veut plus dire "tout poster" : 1 contenu + engage + growth
+        return ["post_smart", "engage", "growth"]
 
-    jobs = []
-    if h in (7, 8, 9, 11, 13, 15, 17, 18, 20):
+    jobs: list[str] = []
+
+    # --- CONTENU : seulement 3 créneaux UTC / jour, UN seul type ---
+    # 8h = post perso, 13h = actu, 19h = post perso (autre niche)
+    if h == 8:
         jobs.append("post_smart")
-    if h in (8, 14, 19):
+    elif h == 13:
         jobs.append("news")
-    if h in (8, 12, 16, 20):
+    elif h == 19:
+        jobs.append("post_smart")
+
+    # --- engagement discret (pas de post) ---
+    if h in (10, 16, 22):
         jobs.append("engage")
-    jobs.append("replies")
-    if h in (9, 15, 21):
+
+    # mentions : max 2x / jour
+    if h in (11, 20):
+        jobs.append("replies")
+
+    # growth follows : 1x / jour
+    if h == 15:
         jobs.append("growth")
-    if h == 10:
+
+    # stats silencieux (pas de post)
+    if h == 23:
         jobs.append("stats")
+
     if h == 21 and _weekday() == 6:
         jobs.append("weekly_report")
 
+    # dédoublonnage
     seen, out = set(), []
     for j in jobs:
         if j not in seen:
             seen.add(j)
             out.append(j)
-    return out or ["replies"]
+
+    # si aucune heure clé : ne rien faire (silence = humain)
+    return out
 
 
 def _rotate_niche() -> str:
     h = _hour_utc()
-    if h < 6:
-        return "auto"
     if h < 12:
-        return random.choice(["bluesky", "world", "auto"])
+        return random.choice(["auto", "bluesky"])
     if h < 18:
-        return random.choice(["crypto", "world", "auto"])
-    return random.choice(["auto", "bluesky", "crypto", "world"])
+        return random.choice(["crypto", "world"])
+    return random.choice(["auto", "world", "bluesky"])
 
 
 def pick_content() -> tuple[str, str]:
@@ -121,7 +144,7 @@ def pick_content() -> tuple[str, str]:
     if custom:
         return "custom", custom
     niche = os.getenv("FORCE_NICHE", "").strip() or _rotate_niche()
-    h = _hour_utc()
+
     if niche == "crypto":
         pool = [
             ("crypto_tip", random.choice(TIPS_CRYPTO)),
@@ -132,12 +155,10 @@ def pick_content() -> tuple[str, str]:
         pool = [
             ("bsky_tip", random.choice(TIPS_BSKY)),
             ("question", random.choice(QUESTIONS)),
-            ("series", random.choice([s for s in SERIES if "BSKY" in s or "AUTO" in s] or SERIES)),
         ]
     elif niche == "world":
         pool = [
             ("world_tip", random.choice(TIPS_WORLD)),
-            ("question", random.choice(QUESTIONS)),
             ("quote", random.choice(QUOTES)),
         ]
     else:
@@ -145,11 +166,10 @@ def pick_content() -> tuple[str, str]:
             ("tip", random.choice(TIPS_AUTO)),
             ("series", random.choice([s for s in SERIES if "AUTO" in s] or SERIES)),
             ("question", random.choice(QUESTIONS)),
-            ("quote", random.choice(QUOTES)),
         ]
-    if h < 12:
-        pool = [p for p in pool if p[0] != "question"] + pool
+
     kind, text = random.choice(pool)
+    # pas de signature bot par défaut
     brand = os.getenv("BRAND_SUFFIX", "")
     if brand and brand.strip() not in text:
         text = text + brand
@@ -159,6 +179,6 @@ def pick_content() -> tuple[str, str]:
 def catalog_report() -> str:
     s = summary()
     return (
-        f"OPTIMAT {len(CATALOG)} | active={s.get('active', 0)} stub={s.get('stub', 0)} | "
-        f"autopilote niches+news+growth"
+        f"OPTIMAT cadence humaine | active={s.get('active', 0)} | "
+        f"max ~3 posts/jour espacés"
     )

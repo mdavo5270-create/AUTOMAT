@@ -1,4 +1,4 @@
-"""OPTIMAT Worker — autopilote complet."""
+"""OPTIMAT Worker — silence par défaut, peu de posts."""
 from __future__ import annotations
 
 import json
@@ -23,8 +23,9 @@ def run_post_smart():
     from automat.client import get_client
     from optomat.media import post_with_optional_image
 
-    if jitter_skip(0.08):
-        log("post_smart: skip jitter")
+    # plus de chance de skip = plus humain
+    if jitter_skip(0.25):
+        log("post_smart: skip (jitter humain)")
         log_event("post_skip", {"reason": "jitter"})
         return
 
@@ -42,19 +43,15 @@ def run_news():
     from automat.client import get_client
     from optomat.news import post_news
 
+    if jitter_skip(0.2):
+        log("news: skip jitter")
+        return
     client = get_client()
-    post_news(client, max_posts=int(os.getenv("NEWS_MAX", "1")))
+    post_news(client, max_posts=1)
 
 
 def run_rss():
-    from automat.rss import post_from_rss
-
-    feed = os.getenv("RSS_FEED", "")
-    if not feed:
-        # délègue au module news multi-flux
-        return run_news()
-    post_from_rss(feed, max_posts=int(os.getenv("RSS_MAX", "1")))
-    log_event("rss", {"feed": feed})
+    return run_news()
 
 
 def run_engage():
@@ -67,7 +64,7 @@ def run_engage():
 def run_replies():
     from automat.replies import reply_to_mentions
 
-    reply_to_mentions(max_replies=int(os.getenv("MAX_REPLIES", "5")))
+    reply_to_mentions(max_replies=int(os.getenv("MAX_REPLIES", "3")))
     log_event("replies", {})
 
 
@@ -97,7 +94,7 @@ def run_stats():
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as f:
         f.write(json.dumps(data) + "\n")
-    log(f"stats: followers={data['followers']} follows={data['follows']} posts={data['posts']}")
+    log(f"stats: {data}")
     log_event("stats", data)
 
 
@@ -107,11 +104,10 @@ def run_weekly_report():
     client = get_client()
     profile = client.get_profile(client.me.did)
     text = humanize_text(
-        f"Notes de la semaine \ud83d\udcca @{profile.handle} \u00b7 "
-        f"{getattr(profile, 'followers_count', '?')} followers \u2014 on teste, on garde ce qui marche."
+        f"Petite note de la semaine — @{profile.handle}, "
+        f"{getattr(profile, 'followers_count', '?')} followers. On avance tranquillement."
     )
     client.send_post(text=text[:300])
-    log("weekly_report")
     log_event("weekly_report", {})
 
 
@@ -128,21 +124,24 @@ JOBS = {
 
 
 def main():
-    log("OPTIMAT autopilote")
+    log("OPTIMAT (cadence humaine)")
     log(catalog_report())
-    log(f"expérience du jour: {pick_daily_experiment()}")
 
-    jobs = decide_jobs()
     only = os.getenv("OPTIMAT_ONLY", "").strip()
     if only:
         jobs = [j.strip() for j in only.split(",") if j.strip()]
+    else:
+        jobs = decide_jobs()
+
+    if not jobs:
+        log("Silence — aucun job à cette heure (voulu)")
+        return
 
     log(f"Jobs: {jobs}")
     errors = []
     for name in jobs:
         fn = JOBS.get(name)
         if not fn:
-            log(f"stub: {name}")
             continue
         try:
             log(f"→ {name}")
@@ -152,9 +151,7 @@ def main():
             log(f"✗ {name}: {e}")
             traceback.print_exc()
             errors.append(name)
-
     if errors:
-        log(f"erreurs: {errors}")
         sys.exit(1)
     log("OK")
 
