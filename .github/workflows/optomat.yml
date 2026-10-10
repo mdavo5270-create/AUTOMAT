@@ -2,7 +2,6 @@ name: OPTIMAT 24/7 (méta-orchestrateur)
 
 on:
   schedule:
-    # Toutes les heures — le brain décide quoi faire
     - cron: "15 * * * *"
   workflow_dispatch:
     inputs:
@@ -14,20 +13,21 @@ on:
         description: "Jobs forcés (ex: post_smart,engage)"
         default: ""
         required: false
+      niche:
+        description: "auto | bluesky | crypto | world (vide = rotation)"
+        default: ""
+        required: false
 
 jobs:
   optomat:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install
         run: pip install -r requirements.txt
-
       - name: OPTIMAT Brain + Worker
         env:
           BLUESKY_HANDLE: ${{ secrets.BLUESKY_HANDLE }}
@@ -36,9 +36,14 @@ jobs:
           RSS_FEED: ${{ secrets.RSS_FEED }}
           POST_TEXT: ${{ secrets.POST_TEXT }}
           BRAND_SUFFIX: ${{ secrets.BRAND_SUFFIX }}
+          FORCE_NICHE: ${{ github.event.inputs.niche || '' }}
           OPTIMAT_MODE: ${{ github.event.inputs.mode || 'auto' }}
           OPTIMAT_ONLY: ${{ github.event.inputs.only || '' }}
           MAX_ENGAGE_PER_RUN: "6"
           MAX_REPLIES: "5"
           RSS_MAX: "2"
-        run: python -m optomat.worker
+        run: |
+          if [ -z "$KEYWORDS" ] && [ -f optomat/keywords.default ]; then
+            export KEYWORDS=$(cat optomat/keywords.default)
+          fi
+          python -m optomat.worker

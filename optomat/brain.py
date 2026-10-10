@@ -1,50 +1,75 @@
 """
-OPTIMAT Brain — l'automatisation qui gère les automatisations.
-Décide quoi lancer selon l'heure, le jour, et la config.
-Représente le compte mdavo5270 et fait le travail à ta place.
+OPTIMAT Brain — niches : automatisation, Bluesky, crypto, sujets monde.
+Représente @mdavo5270.bsky.social
 """
 from __future__ import annotations
 
 import os
 import random
 from datetime import datetime, timezone
-from pathlib import Path
 
 from optomat.catalog import CATALOG, by_status, summary
 
-# Contenu de représentation (personnalisable via secrets)
-TIPS = [
-    "Astuce Bluesky : utilise des App Passwords, jamais ton vrai mot de passe. 🐛",
-    "L'AT Protocol permet des clients alternatifs et des feeds custom. Explore !",
-    "Poste régulièrement > poster beaucoup d'un coup. La constance gagne.",
-    "Répondre aux vrais humains convertit mieux que liker en masse.",
-    "Une bio claire + un pinned post = plus de follows qualifiés.",
-    "Les starter packs aident à découvrir ta niche rapidement.",
-    "Moins de spam, plus de valeur = croissance durable.",
-    "Automatise le répétitif, garde l'humain pour les conversations.",
+# --- Automatisation / agents / build in public ---
+TIPS_AUTO = [
+    "Astuce : sépare App Password et vrai mot de passe. Toujours. 🐛",
+    "GitHub Actions = serveur gratuit pour bots planifiés. Pas besoin de VPS pour du cron.",
+    "Un orchestrateur qui décide des jobs > 10 scripts qui tournent en même temps.",
+    "Automatise le répétitif. Garde l'humain pour les vraies conversations.",
+    "Build in public : montrer le bot en construction attire plus que le produit fini seul.",
+    "Rate limit = fonctionnalité. Qui spam se fait restreindre.",
+]
+
+# --- Bluesky ---
+TIPS_BSKY = [
+    "Bluesky : les custom feeds et l'AT Protocol changent la donne vs algo fermé.",
+    "Une bio claire + un post épinglé > 50 follows aléatoires.",
+    "Répondre sous les posts de ta niche convertit mieux que liker en masse.",
+    "Starter packs = découverte rapide de communautés. À utiliser, pas à spammer.",
+]
+
+# --- Crypto (factuel, pas de conseil financier) ---
+TIPS_CRYPTO = [
+    "Crypto : DYOR reste la base. Personne ne peut garantir un rendement.",
+    "On-chain data > hype Twitter. Les blocs ne mentent pas, les narratives si.",
+    "Self-custody = responsabilité. Perdre une seed = perdre les fonds.",
+    "Régulation et adoption institutionnelle façonnent le cycle autant que le prix.",
+    "Bitcoin = réseau + actif. Séparer le protocole du prix du jour aide à réfléchir.",
+    "DeFi : lis le smart contract risk avant l'APY affiché.",
+]
+
+# --- Sujets monde / tech très discutés ---
+TIPS_WORLD = [
+    "L'IA générative déplace le travail de 'produire' vers 'diriger et vérifier'.",
+    "Open source : la transparence du code reste un avantage stratégique.",
+    "Productivité : moins d'outils, plus de systèmes qui se parlent entre eux.",
+    "Internet 2026 : attention rare, contenu médiocre en quantité infinie.",
+    "Les réseaux décentralisés tentent de rendre la portabilité du social réelle.",
 ]
 
 QUESTIONS = [
-    "Tu construis quoi en ce moment ?",
-    "Quelle est ta stack préférée en 2026 ?",
-    "Bluesky ou autre : où tu passes le plus de temps et pourquoi ?",
-    "Une automatisation qui t'a vraiment fait gagner du temps ?",
-    "Conseil rapide pour quelqu'un qui débute sur Bluesky ?",
+    "Tu automatises quoi en ce moment — et ça te fait gagner combien de temps / semaine ?",
+    "Bluesky : tu es là pour la tech, la commu, ou la croissance ?",
+    "Crypto : tu suis plutôt le prix, l'on-chain, ou la régulation ?",
+    "IA : tu l'utilises pour coder, écrire, ou décider ?",
+    "Build in public : tu partages tes wins, tes fails, ou les deux ?",
+    "Quel sujet monde tu suis le plus en ce moment (tech, éco, géo) ?",
 ]
 
 QUOTES = [
     "Ship early, learn fast.",
-    "Done is better than perfect — puis itère.",
-    "Build in public. Apprends en public.",
-    "L'attention est rare. Le spam est gratuit. Choisis.",
+    "Not financial advice — just signal over noise.",
+    "Done > perfect, puis itère.",
+    "Build systems, not just goals.",
 ]
 
 SERIES = [
-    "Série AUTO #1 : un bot qui poste, like et répond — sans serveur dédié, via GitHub Actions.",
-    "Série AUTO #2 : sépare App Password et vrai mot de passe. Toujours.",
-    "Série AUTO #3 : mesure ce qui amène des follows, coupe le reste.",
-    "Série AUTO #4 : RSS → Bluesky = contenu régulier sans y penser.",
-    "Série AUTO #5 : l'orchestrateur OPTIMAT décide quoi lancer selon l'heure.",
+    "Série AUTO #1 : un bot Bluesky 24/7 sans VPS (GitHub Actions).",
+    "Série AUTO #2 : méta-bot — une automatisation qui pilote les autres.",
+    "Série CRYPTO #1 : séparer protocole, prix et narratif.",
+    "Série CRYPTO #2 : self-custody et hygiène de clés, les bases.",
+    "Série MONDE #1 : IA + automatisation = le duo qui redéfinit le travail.",
+    "Série BSKY #1 : croissance éthique > follow spam.",
 ]
 
 
@@ -53,16 +78,13 @@ def _hour_utc() -> int:
 
 
 def _weekday() -> int:
-    return datetime.now(timezone.utc).weekday()  # 0=lundi
+    return datetime.now(timezone.utc).weekday()
 
 
 def decide_jobs() -> list[str]:
-    """Choisit les jobs à lancer pour ce run (méta-décision)."""
     h = _hour_utc()
     jobs: list[str] = []
-
-    # Toujours : rate-limit friendly, pas tout en même temps
-    mode = os.getenv("OPTIMAT_MODE", "auto")  # auto | content | engage | full
+    mode = os.getenv("OPTIMAT_MODE", "auto")
 
     if mode == "content":
         return ["post_smart"]
@@ -71,58 +93,89 @@ def decide_jobs() -> list[str]:
     if mode == "full":
         return ["post_smart", "rss", "engage", "replies", "stats"]
 
-    # auto : selon l'heure UTC
-    if h in (7, 8, 9, 12, 17, 18, 20):
+    if h in (7, 8, 9, 12, 15, 17, 18, 20):
         jobs.append("post_smart")
     if h % 2 == 0:
         jobs.append("rss")
     if h in (8, 12, 16, 20):
         jobs.append("engage")
-    if h % 1 == 0:  # chaque heure possible
-        jobs.append("replies")
-    if h == 21 and _weekday() == 6:  # dimanche soir
+    jobs.append("replies")
+    if h == 21 and _weekday() == 6:
         jobs.append("weekly_report")
     if h == 10:
         jobs.append("stats")
 
-    # dédoublonne en gardant l'ordre
     seen = set()
     out = []
     for j in jobs:
         if j not in seen:
             seen.add(j)
             out.append(j)
-    return out or ["replies"]  # au minimum check mentions
+    return out or ["replies"]
+
+
+def _rotate_niche() -> str:
+    """Répartition des niches selon l'heure (diversité anti-spam thématique)."""
+    h = _hour_utc()
+    # 0-5 auto, 6-11 bluesky/world, 12-17 crypto, 18-23 mix build+world
+    if h < 6:
+        return "auto"
+    if h < 12:
+        return random.choice(["bluesky", "world", "auto"])
+    if h < 18:
+        return random.choice(["crypto", "world", "auto"])
+    return random.choice(["auto", "bluesky", "crypto", "world"])
 
 
 def pick_content() -> tuple[str, str]:
-    """Choisit le type + texte d'un post de représentation."""
     custom = os.getenv("POST_TEXT", "").strip()
     if custom:
         return "custom", custom
 
+    niche = os.getenv("FORCE_NICHE", "").strip() or _rotate_niche()
     h = _hour_utc()
-    pool = []
-    if h < 12:
-        pool = [("tip", random.choice(TIPS)), ("question", random.choice(QUESTIONS))]
-    elif h < 18:
-        pool = [("series", random.choice(SERIES)), ("tip", random.choice(TIPS))]
-    else:
-        pool = [("quote", random.choice(QUOTES)), ("question", random.choice(QUESTIONS))]
 
+    if niche == "crypto":
+        pool = [
+            ("crypto_tip", random.choice(TIPS_CRYPTO)),
+            ("question", "Crypto : tu priorises sécurité, usage, ou spéculation — et pourquoi ?"),
+            ("series", random.choice([s for s in SERIES if "CRYPTO" in s] or SERIES)),
+        ]
+    elif niche == "bluesky":
+        pool = [
+            ("bsky_tip", random.choice(TIPS_BSKY)),
+            ("question", random.choice(QUESTIONS)),
+            ("series", random.choice([s for s in SERIES if "BSKY" in s or "AUTO" in s] or SERIES)),
+        ]
+    elif niche == "world":
+        pool = [
+            ("world_tip", random.choice(TIPS_WORLD)),
+            ("question", random.choice(QUESTIONS)),
+            ("quote", random.choice(QUOTES)),
+        ]
+    else:  # auto
+        pool = [
+            ("tip", random.choice(TIPS_AUTO)),
+            ("series", random.choice([s for s in SERIES if "AUTO" in s] or SERIES)),
+            ("question", random.choice(QUESTIONS)),
+            ("quote", random.choice(QUOTES)),
+        ]
+
+    # matin = plus tips, soir = plus questions
+    if h < 12:
+        pool = [p for p in pool if p[0] != "question"] + pool
     kind, text = random.choice(pool)
-    brand = os.getenv("BRAND_SUFFIX", "\n\n— via OPTIMAT 🐛")
-    if brand and brand not in text:
+
+    brand = os.getenv("BRAND_SUFFIX", "\n\n— OPTIMAT 🐛")
+    if brand and brand.strip() not in text:
         text = text + brand
-    return kind, text
+    return f"{niche}:{kind}", text
 
 
 def catalog_report() -> str:
     s = summary()
-    active = len(by_status("active"))
-    lines = [
-        f"OPTIMAT catalogue: {len(CATALOG)} automatisations",
-        f"active={s.get('active', 0)} scheduled={s.get('scheduled', 0)} stub={s.get('stub', 0)}",
-        f"Ce run exécute le cerveau + jobs active ({active} prêtes).",
-    ]
-    return "\n".join(lines)
+    return (
+        f"OPTIMAT catalogue: {len(CATALOG)} autos | "
+        f"active={s.get('active', 0)} stub={s.get('stub', 0)} | "
+        f"niches=auto,bluesky,crypto,monde"
+    )
