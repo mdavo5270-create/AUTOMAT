@@ -1,68 +1,62 @@
-# 🐛 AUTOMAT — Automatisation Bluesky 24/7
+# 🐛 AUTOMAT + OPTIMAT
 
-Suite d'automatisation **prête à l'emploi** qui tourne **sans intervention humaine** grâce à **GitHub Actions**.
+Automatisation Bluesky **24/7** pour **@mdavo5270.bsky.social**.
 
-Code adapté à partir de :
-- [philnash/bsky-bot](https://github.com/philnash/bsky-bot)
-- [bluesky-hack/bot](https://github.com/bluesky-hack/bot)
-- [joschi/blueskyfeedbot](https://github.com/joschi/blueskyfeedbot)
-- [Endless-Range/bluesky-engagement-bot](https://github.com/Endless-Range/bluesky-engagement-bot)
+## Deux couches
 
----
+| Couche | Rôle |
+|--------|------|
+| **AUTOMAT** | Outils unitaires (post, RSS, likes, réponses) — déjà testés verts |
+| **OPTIMAT** | **Méta-orchestrateur** : décide quoi lancer, te représente, fait le travail |
 
-## Déploiement 24/7 (obligatoire — 2 minutes)
-
-### 1. Ajoute les secrets GitHub
-
-Va dans ton dépôt → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
-
-| Secret | Obligatoire | Valeur |
-|--------|-------------|--------|
-| `BLUESKY_HANDLE` | Oui | `tonhandle.bsky.social` |
-| `BLUESKY_APP_PASSWORD` | Oui | App Password (https://bsky.app/settings/app-passwords) |
-| `KEYWORDS` | Non | `python,bluesky,ia` |
-| `RSS_FEED` | Non | URL de ton flux RSS |
-| `POST_TEXT` | Non | Texte du post programmé |
-
-### 2. Active les workflows
-
-Onglet **Actions** → active les workflows s'ils sont désactivés.
-
-### 3. C'est tout
-
-Les bots tournent automatiquement :
-
-| Workflow | Fréquence |
-|----------|-----------|
-| **RSS** | Toutes les 2 heures |
-| **Engagement (likes)** | 4	imes / jour |
-| **Réponses mentions** | Toutes les heures |
-| **Post programmé** | 09:30 et 18:30 UTC |
-
-Tu peux aussi les lancer manuellement (bouton **Run workflow**).
-
----
-
-## Modules locaux (optionnel)
-
-```bash
-git clone https://github.com/mdavo5270-create/AUTOMAT.git
-cd AUTOMAT
-pip install -r requirements.txt
-cp .env.example .env   # remplis BLUESKY_HANDLE + BLUESKY_APP_PASSWORD
-
-python -m automat.post --text "Test"
-python -m automat.rss --feed https://exemple.com/rss --max 2
-python -m automat.engage
-python -m automat.replies
+```
+OPTIMAT (cerveau, 1×/heure)
+   ├─ post intelligent (tips, questions, séries)
+   ├─ RSS
+   ├─ engagement (likes ciblés)
+   ├─ réponses mentions
+   ├─ stats + rapport hebdo
+   └─ catalogue de 100 automatisations (active / stub)
 ```
 
----
+## Déjà en place (24/7)
 
-## Important
+1. Workflows unitaires (post, RSS, engage, replies) — OK verts  
+2. **OPTIMAT** — `.github/workflows/optomat.yml` chaque heure  
+3. Catalogue des **100** idées dans `optomat/catalog.py`  
+4. Contenu de représentation (tips / questions / séries) dans `optomat/brain.py`
 
-- Utilise **toujours** une **App Password**, jamais ton vrai mot de passe.
-- GitHub Actions = hébergement gratuit 24/7 pour les tâches planifiées.
-- Le firehose temps réel (connexion permanente) nécessite un VPS ; les workflows ci-dessus couvrent 95 % des besoins d'automatisation sans serveur.
+## Activer OPTIMAT
 
-Dépôt : https://github.com/mdavo5270-create/AUTOMAT
+1. Secrets déjà configurés (`BLUESKY_HANDLE`, `BLUESKY_APP_PASSWORD`)  
+2. Actions → **OPTIMAT 24/7** → **Run workflow** (mode `auto` ou `full`)  
+3. Vérifie ton profil : https://bsky.app/profile/mdavo5270.bsky.social
+
+### Secrets optionnels
+
+| Secret | Effet |
+|--------|--------|
+| `KEYWORDS` | Likes ciblés |
+| `RSS_FEED` | Ton flux |
+| `POST_TEXT` | Force un texte de post |
+| `BRAND_SUFFIX` | Signature (défaut: `\u2014 via OPTIMAT 🐛`) |
+
+## Les 100 automatisations
+
+Tout n'est pas du code production en une fois (sinon spam + ban).  
+OPTIMAT implémente le **cœur actif** et garde le reste en **stub** activable.
+
+Voir :
+- `optomat/catalog.py` — liste complète 1–100  
+- `optomat/brain.py` — décisions  
+- `optomat/worker.py` — exécution  
+
+## Évolution
+
+On active les stubs **un par un** selon ta niche (contenu, follows smart, IA, analytics…).
+
+Commande locale :
+```bash
+pip install -r requirements.txt
+python -m optomat.worker
+```
